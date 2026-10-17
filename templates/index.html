@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Order Management</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-page">
+<div class="login-card">
+    <h1>Order Management</h1>
+    <p>Secure Login</p>
+
+    <label>Username</label>
+    <input id="username" type="text" maxlength="50" autocomplete="username">
+
+    <label>Password</label>
+    <input id="password" type="password" autocomplete="current-password">
+
+    <button class="primary full" id="loginButton">Login</button>
+    <div id="loginMessage"></div>
+</div>
+
+<script>
+document.getElementById("loginButton").addEventListener("click", async () => {
+    const message = document.getElementById("loginMessage");
+    message.innerHTML = "";
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!username || !password) {
+        message.innerHTML = '<div class="error-box">⚠ Enter username and password.</div>';
+        return;
+    }
+
+    try {
+        const response = await fetch("/login", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({username, password})
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            message.innerHTML = `<div class="error-box">⚠ ${result.message}</div>`;
+            return;
+        }
+
+        window.location.href = result.redirect;
+    } catch (e) {
+        message.innerHTML = '<div class="error-box">⚠ Server connection error.</div>';
+    }
+});
+</script>
+</body>
+</html>
