@@ -1,58 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Order Management</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Management System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="login-page">
-<div class="login-card">
-    <h1>Order Management</h1>
-    <p>Secure Login</p>
-
-    <label>Username</label>
-    <input id="username" type="text" maxlength="50" autocomplete="username">
-
-    <label>Password</label>
-    <input id="password" type="password" autocomplete="current-password">
-
-    <button class="primary full" id="loginButton">Login</button>
-    <div id="loginMessage"></div>
+<body>
+<div class="container">
+  <header>
+    <div class="header-row"><div><h1>Order Management System</h1><p>Dine-In • Delivery • Packing</p></div>
+      <div class="user-area"><span>{{ username }} ({{ role|upper }})</span><button type="button" class="secondary" id="logout">Logout</button></div>
+    </div>
+  </header>
+  <section class="card">
+    <h2>1. Customer &amp; Order Type</h2>
+    <label for="orderType">Order Type</label>
+    <select id="orderType"><option value="">Select order type</option><option value="Dine-In">Dine-In</option><option value="Delivery">Delivery</option><option value="Packing">Packing</option></select>
+    <small class="error" id="orderTypeError"></small>
+    <div class="grid">
+      <div><label for="name">Customer Name *</label><input id="name" type="text" maxlength="100" placeholder="Enter customer name"><small class="error" id="nameError"></small></div>
+      {% if role == "owner" %}<div><label for="phone">Phone Number *</label><input id="phone" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digit phone number"><small class="error" id="phoneError"></small></div>{% endif %}
+    </div>
+    <div id="tableBox" class="hidden"><label for="tableNumber">Table Number *</label><input id="tableNumber" type="number" min="1" step="1" placeholder="e.g. 5"><small class="error" id="tableError"></small></div>
+    {% if role == "owner" %}<div id="addressBox"><label for="address">Address</label><textarea id="address" maxlength="255" placeholder="Required for delivery"></textarea><small class="error" id="addressError"></small></div>{% endif %}
+  </section>
+  <section class="card"><h2>2. Items</h2><div id="itemsBox"></div><button type="button" class="secondary" id="addItem">+ Add Item</button><div class="total">Total: ₹<span id="totalAmount">0.00</span></div></section>
+  <section class="card"><h2>3. Complete Order</h2><button type="button" class="primary" id="completeOrder">Complete Order</button><div id="orderMessage"></div></section>
+  {% if role == "owner" %}
+  <section class="card"><h2>4. Owner Only — Purchase History</h2><p class="privacy-note">🔒 Phone numbers and addresses are visible only to the owner.</p>
+    <div class="search-row"><div><label for="searchDate">Select Date</label><input id="searchDate" type="date"></div><button type="button" class="primary" id="searchByDate">Search</button></div>
+    <small class="error" id="searchError"></small><div id="customerResult"></div>
+  </section>
+  {% endif %}
 </div>
-
-<script>
-document.getElementById("loginButton").addEventListener("click", async () => {
-    const message = document.getElementById("loginMessage");
-    message.innerHTML = "";
-
-    const username = document.getElementById("username").value.trim();
-    const password = document.getElementById("password").value;
-
-    if (!username || !password) {
-        message.innerHTML = '<div class="error-box">⚠ Enter username and password.</div>';
-        return;
-    }
-
-    try {
-        const response = await fetch("/login", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({username, password})
-        });
-
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-            message.innerHTML = `<div class="error-box">⚠ ${result.message}</div>`;
-            return;
-        }
-
-        window.location.href = result.redirect;
-    } catch (e) {
-        message.innerHTML = '<div class="error-box">⚠ Server connection error.</div>';
-    }
-});
-</script>
-</body>
-</html>
+<script>const CURRENT_ROLE = {{ role|tojson }};</script>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body></html>
