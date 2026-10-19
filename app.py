@@ -490,7 +490,52 @@ def setup_users():
     finally:
         conn.close()
 
+@app.route("/api/admin/reset-staff-password", methods=["POST"])
+def reset_staff_password():
+    data = request.get_json(silent=True) or {}
 
+    expected_key = os.environ.get("RESET_STAFF_KEY", "")
+    provided_key = str(data.get("reset_key", ""))
+
+    if not expected_key or not hmac.compare_digest(
+        provided_key, expected_key
+    ):
+        return jsonify({
+            "success": False,
+            "message": "Unauthorized."
+        }), 403
+
+    username = str(data.get("username", "")).strip()
+    new_password = str(data.get("new_password", ""))
+
+    if not username or len(new_password) < 12:
+        return jsonify({
+            "success": False,
+            "message": "Username required; password must be at least 12 characters."
+        }), 400
+
+    conn = get_db()
+    try:
+        with conn:
+            result = conn.execute(
+                """UPDATE users
+                   SET password_hash = ?
+                   WHERE username = ? AND role = 'staff'""",
+                (generate_password_hash(new_password), username)
+            )
+
+        if result.rowcount != 1:
+            return jsonify({
+                "success": False,
+                "message": "Staff account not found."
+            }), 404
+
+        return jsonify({
+            "success": True,
+            "message": "Staff password updated."
+        })
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     init_db()
