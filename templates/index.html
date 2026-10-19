@@ -1,38 +1,183 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Order Management System</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Management System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <div class="container">
-  <header>
-    <div class="header-row"><div><h1>Order Management System</h1><p>Dine-In • Delivery • Packing</p></div>
-      <div class="user-area"><span>{{ username }} ({{ role|upper }})</span><button type="button" class="secondary" id="logout">Logout</button></div>
-    </div>
-  </header>
-  <section class="card">
-    <h2>1. Customer &amp; Order Type</h2>
-    <label for="orderType">Order Type</label>
-    <select id="orderType"><option value="">Select order type</option><option value="Dine-In">Dine-In</option><option value="Delivery">Delivery</option><option value="Packing">Packing</option></select>
-    <small class="error" id="orderTypeError"></small>
-    <div class="grid">
-      <div><label for="name">Customer Name *</label><input id="name" type="text" maxlength="100" placeholder="Enter customer name"><small class="error" id="nameError"></small></div>
-      {% if role == "owner" %}<div><label for="phone">Phone Number *</label><input id="phone" type="tel" inputmode="numeric" maxlength="10" placeholder="10 digit phone number"><small class="error" id="phoneError"></small></div>{% endif %}
-    </div>
-    <div id="tableBox" class="hidden"><label for="tableNumber">Table Number *</label><input id="tableNumber" type="number" min="1" step="1" placeholder="e.g. 5"><small class="error" id="tableError"></small></div>
-    {% if role == "owner" %}<div id="addressBox"><label for="address">Address</label><textarea id="address" maxlength="255" placeholder="Required for delivery"></textarea><small class="error" id="addressError"></small></div>{% endif %}
-  </section>
-  <section class="card"><h2>2. Items</h2><div id="itemsBox"></div><button type="button" class="secondary" id="addItem">+ Add Item</button><div class="total">Total: ₹<span id="totalAmount">0.00</span></div></section>
-  <section class="card"><h2>3. Complete Order</h2><button type="button" class="primary" id="completeOrder">Complete Order</button><div id="orderMessage"></div></section>
-  {% if role == "owner" %}
-  <section class="card"><h2>4. Owner Only — Purchase History</h2><p class="privacy-note">🔒 Phone numbers and addresses are visible only to the owner.</p>
-    <div class="search-row"><div><label for="searchDate">Select Date</label><input id="searchDate" type="date"></div><button type="button" class="primary" id="searchByDate">Search</button></div>
-    <small class="error" id="searchError"></small><div id="customerResult"></div>
-  </section>
-  {% endif %}
+    <header>
+        <div class="header-row">
+            <div>
+                <h1>Order Management System</h1>
+                <p>Dine-In • Delivery • Packing</p>
+            </div>
+            <div class="user-area">
+                <span>{{ username }} ({{ role|upper }})</span>
+                <button type="button" class="secondary" id="logout">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <form id="orderForm">
+        <section class="card">
+            <h2>1. Customer Details & Order Type</h2>
+            <p class="hint">Staff can enter customer details for the order. Historical phone/address details remain owner-only.</p>
+
+            <label for="orderType">Order Type *</label>
+            <select id="orderType" required>
+                <option value="">Select order type</option>
+                <option value="Dine-In">Dine-In</option>
+                <option value="Delivery">Delivery</option>
+                <option value="Packing">Packing</option>
+            </select>
+            <small class="error" id="orderTypeError"></small>
+
+            <div class="grid">
+                <div>
+                    <label for="name">Customer Name *</label>
+                    <input id="name" type="text" maxlength="100"
+                           placeholder="Enter customer name" required>
+                    <small class="error" id="nameError"></small>
+                </div>
+
+                <div>
+                    <label for="phone">Phone Number *</label>
+                    <input id="phone" type="tel" inputmode="numeric"
+                           maxlength="10" placeholder="Optional: 10 digit phone number">
+                    <small class="error" id="phoneError"></small>
+                </div>
+            </div>
+
+            <div id="tableBox" class="hidden">
+                <label for="tableNumber">Table Number *</label>
+                <input id="tableNumber" type="number" min="1" step="1"
+                       placeholder="e.g. 5">
+                <small class="error" id="tableError"></small>
+            </div>
+
+            <div id="addressBox">
+                <label for="address">Customer Address</label>
+                <textarea id="address" maxlength="255"
+                          placeholder="Required for delivery"></textarea>
+                <small class="error" id="addressError"></small>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>2. Order Items</h2>
+            <div id="itemsBox"></div>
+            <button type="button" class="secondary" id="addItem">
+                + Add Item
+            </button>
+            <div class="total">
+                Total: ₹<span id="totalAmount">0.00</span>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>3. Payment Details</h2>
+
+            <label for="paymentMethod">Payment Method *</label>
+            <select id="paymentMethod" required>
+                <option value="">Select payment method</option>
+                <option value="Cash">Cash</option>
+                <option value="Online">Online</option>
+            </select>
+
+            <label for="paymentStatus">Payment Status *</label>
+            <select id="paymentStatus" required>
+                <option value="Pending">Pending</option>
+                <option value="Paid">Paid</option>
+            </select>
+
+            <small>
+                Select Paid only after payment has actually been received.
+            </small>
+        </section>
+
+        <section class="card">
+            <h2>4. Review Bill & Choose Order Action</h2>
+            <p class="hint">Check the bill and payment details above, then choose what should happen to this order.</p>
+            <div class="order-action-buttons">
+                <button type="submit" class="primary order-submit" data-order-status="Confirmed">Confirm Order</button>
+                <button type="submit" class="secondary order-submit" data-order-status="Pending">Save as Pending</button>
+                <button type="submit" class="danger order-submit" data-order-status="Cancelled">Cancel Order</button>
+            </div>
+            <div id="orderMessage" role="status"></div>
+        </section>
+    </form>
+
+    <section class="card" id="manageOrdersCard">
+        <h2>5. Manage Orders — Quick Access</h2>
+        <p>Use these filters directly here. You do not need to open date-wise history to find pending or cancelled orders. Phone numbers and addresses are hidden in this list.</p>
+
+        <div class="filter-buttons" id="statusFilters">
+            <button type="button" class="primary filter-button active" data-status="All">All Orders</button>
+            <button type="button" class="secondary filter-button" data-status="Pending">Pending</button>
+            <button type="button" class="secondary filter-button" data-status="Confirmed">Confirmed</button>
+            <button type="button" class="secondary filter-button" data-status="Preparing">Preparing</button>
+            <button type="button" class="secondary filter-button" data-status="Ready">Ready</button>
+            <button type="button" class="secondary filter-button" data-status="Completed">Completed</button>
+            <button type="button" class="secondary filter-button" data-status="Cancelled">Cancelled</button>
+        </div>
+
+        <div class="search-row filter-search-row">
+            <div>
+                <label for="manageSearch">Search by order ID, customer name, or item</label>
+                <input id="manageSearch" type="search" placeholder="e.g. 105, Rahul, Pizza">
+            </div>
+            <div>
+                <label for="managePaymentFilter">Payment</label>
+                <select id="managePaymentFilter">
+                    <option value="All">All payments</option>
+                    <option value="Paid">Paid</option>
+                    <option value="Unpaid">Unpaid / Pending</option>
+                </select>
+            </div>
+        </div>
+        <div class="search-row">
+            <div>
+                <label for="manageOrderDate">Optional date filter</label>
+                <input id="manageOrderDate" type="date">
+            </div>
+            <button type="button" class="primary" id="loadOrders">Search / Refresh Orders</button>
+        </div>
+
+        <small class="error" id="manageOrdersError"></small>
+        <div id="ordersList"><p>Loading recent orders…</p></div>
+    </section>
+
+    {% if role == "owner" %}
+    <section class="card">
+        <h2>6. Owner Only — Date-wise Purchase History</h2>
+        <p class="privacy-note">
+            Phone numbers and addresses in historical records are visible
+            only to the owner.
+        </p>
+
+        <div class="search-row">
+            <div>
+                <label for="searchDate">Select Date</label>
+                <input id="searchDate" type="date">
+            </div>
+            <button type="button" class="primary" id="searchByDate">
+                Search History
+            </button>
+        </div>
+
+        <small class="error" id="searchError"></small>
+        <div id="customerResult"></div>
+    </section>
+    {% endif %}
 </div>
-<script>const CURRENT_ROLE = {{ role|tojson }};</script>
+
+<script>
+    const CURRENT_ROLE = {{ role|tojson }};
+</script>
 <script src="{{ url_for('static', filename='script.js') }}"></script>
-</body></html>
+</body>
+</html>
